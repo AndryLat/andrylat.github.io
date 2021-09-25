@@ -1,0 +1,503 @@
+<!doctype html><html lang=ru data-figures class=page data-mode=lit>
+<head>
+<title>Advanced driver-assistance system on Jetson Nano Part 3 - Deep neural networks | Andrylat: Dev notes</title>
+<meta charset=utf-8>
+<meta name=generator content="Hugo 0.88.1">
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta property="og:locale" content="ru">
+<meta property="og:type" content="article">
+<meta name=description content="Recently, I have built a prototype of an advanced driver-assistance system (ADAS) using a Jetson Nano computer. In this post, I focus on 2 machine learning …">
+<meta name=twitter:card content="summary">
+<meta name=twitter:creator content="@vietanhdev">
+<meta name=twitter:title content="Advanced driver-assistance system on Jetson Nano Part 3 - Deep neural networks">
+<meta property="og:url" content="https://aicurious.io/posts/adas-jetson-nano-deep-neural-networks/">
+<meta property="og:title" content="Advanced driver-assistance system on Jetson Nano Part 3 - Deep neural networks">
+<meta property="og:description" content="Recently, I have built a prototype of an advanced driver-assistance system (ADAS) using a Jetson Nano computer. In this post, I focus on 2 machine learning …">
+<meta property="og:image" content="https://aicurious.io/posts/adas-jetson-nano-deep-neural-networks/mapillary-vista-preprocessing.png">
+<link rel=apple-touch-icon sizes=180x180 href=https://aicurious.io/icons/apple-touch-icon.png>
+<link rel=icon type=image/png sizes=32x32 href=https://aicurious.io/icons/favicon-32x32.png>
+<link rel=manifest href=https://aicurious.io/icons/site.webmanifest>
+<link rel=mask-icon href=https://aicurious.io/safari-pinned-tab.svg color=#002538>
+<meta name=msapplication-TileColor content="#002538">
+<meta name=theme-color content="#002538">
+<link rel=canonical href=https://aicurious.io/posts/adas-jetson-nano-deep-neural-networks/>
+<link rel=preload href=https://aicurious.io/css/styles.css integrity as=style crossorigin=anonymous>
+<link rel=preload href=https://aicurious.io/js/bundle.min.5e4b2b0beb72634f7d429f971665e08330cb157ebab11f280b78f12d778628b51305d7109aa57feb78cd52af82128e77611bfbe196288a6ff5f146421613c8a5.js as=script integrity="sha512-XksrC+tyY099Qp+XFmXggzDLFX66sR8oC3jxLXeGKLUTBdcQmqV/63jNUq+CEo53YRv74ZYoim/18UZCFhPIpQ==" crossorigin=anonymous>
+<link rel=stylesheet type=text/css href=https://aicurious.io/css/styles.css integrity crossorigin=anonymous>
+</head>
+<body data-code=100 data-lines=true id=documentTop>
+<header id=top-navbar class=nav_header>
+<nav class=nav>
+<a href=https://aicurious.io/ class="nav_brand nav_item">
+<img alt="Andrylat: Dev notes" src=https://aicurious.io/logo.png class=logo>
+<span class=site-title>Andrylat: Dev notes</span>
+<div class=nav_close>
+<div><svg class="icon"><use xlink:href="#open-menu"/></svg><svg class="icon"><use xlink:href="#closeme"/></svg>
+</div>
+</div>
+</a>
+<div class="nav_body nav_body_right">
+<div class=nav_parent>
+<a href=https://aicurious.io/ class=nav_item>Блог </a>
+</div>
+<div class=nav_parent>
+<a href=https://aicurious.io/notes/ class=nav_item>Notes </a>
+</div>
+<div class=nav_parent>
+<a href=https://aicurious.io/about/ class=nav_item>Author </a>
+</div>
+<div class=nav_parent>
+<a href=https://aicurious.io/links/ class=nav_item>Links <img src=https://aicurious.io/icons/caret-icon.svg alt=icon class=nav_icon></a>
+<div class=nav_sub>
+<span class=nav_child></span>
+<a href=https://aicurious.io/ class="nav_child nav_item">AICurious</a>
+<a href=https://gohugo.io/ class="nav_child nav_item">HUGO Framework</a>
+</div>
+</div>
+<div class=nav_parent>
+<a href=https://aicurious.io/contact/ class=nav_item><img src=https://aicurious.io/icons/mail.svg style=height:1.2rem;display:inline;margin:0> </a>
+</div>
+<div class=nav_parent>
+<a href=https://aicurious.io/search/ class=nav_item><img src=https://aicurious.io/icons/search.svg style=height:1.2rem;display:inline;margin:0> </a>
+</div>
+<div class=nav_parent>
+<a href=# class=nav_item>🌐</a>
+<div class=nav_sub>
+<span class=nav_child></span>
+<a href=https://aicurious.io/ class="nav_child nav_item">Русский</a>
+<a href=https://aicurious.io/en/ class="nav_child nav_item">English</a>
+</div>
+</div>
+<div class=follow>
+<a href=https://github.com/vietanhdev><svg class="icon"><use xlink:href="#github"/></svg>
+</a>
+<a href=https://www.youtube.com/channel/UCLUmTiBrfQZi6WZE6kYmGmw><svg class="icon"><use xlink:href="#youtube"/></svg>
+</a>
+<div class=color_mode>
+<input type=checkbox class=color_choice id=mode>
+<label for=mode style=display:none>Color mode</label>
+</div>
+</div>
+</div>
+</nav>
+</header>
+<main>
+<div class="wrap content grid-inverse type-post">
+<article class=post_content>
+<h1 class=post_title>Advanced driver-assistance system on Jetson Nano Part 3 - Deep neural networks</h1><div class=post_meta><svg class="icon"><use xlink:href="#calendar"/></svg>
+<span class=post_date>
+Sep 21, 2020</span>
+<a href=https://aicurious.io/tags/adas class="post_tag button button_translucent">ADAS
+</a>
+<a href=https://aicurious.io/tags/jetson-nano class="post_tag button button_translucent">Jetson Nano
+</a>
+</div>
+<div class=post_share>
+:
+<a href="https://twitter.com/intent/tweet?text=Advanced%20driver-assistance%20system%20on%20Jetson%20Nano%20Part%203%20-%20Deep%20neural%20networks&url=https%3a%2f%2faicurious.io%2fposts%2fadas-jetson-nano-deep-neural-networks%2f&tw_p=tweetbutton" class=twitter title=" Twitter" target=_blank rel=nofollow><svg class="icon"><use xlink:href="#twitter"/></svg>
+</a>
+<a href="https://www.facebook.com/sharer.php?u=https%3a%2f%2faicurious.io%2fposts%2fadas-jetson-nano-deep-neural-networks%2f&t=Advanced%20driver-assistance%20system%20on%20Jetson%20Nano%20Part%203%20-%20Deep%20neural%20networks" class=facebook title=" Facebook" target=_blank rel=nofollow><svg class="icon"><use xlink:href="#facebook"/></svg>
+</a>
+<a href=#linkedinshare id=linkedinshare class=linkedin title=" LinkedIn" rel=nofollow><svg class="icon"><use xlink:href="#linkedin"/></svg>
+</a>
+<a href=https://aicurious.io/posts/adas-jetson-nano-deep-neural-networks/ title="Copy Link" class="link link_yank"><svg class="icon"><use xlink:href="#copy"/></svg>
+</a>
+</div>
+<div class=js-toc-content><p>Recently, I have built a prototype of an advanced driver-assistance system (ADAS) using a <a href=https://aicurious.io/posts/2020-04-02-thiet-lap-ban-dau-cho-jetson-nano/>Jetson Nano computer</a>. In this project, I have successfully deployed <strong>3 deep neural networks</strong> and some <strong>computer vision algorithms</strong> on a <a href=https://www.nvidia.com/en-us/autonomous-machines/jetson-store/>super cheap hardware of Jetson Nano</a>. In the last two posts, I have introduced the system in <a href=https://aicurious.io/posts/adas-jetson-nano-intro-and-hardware/>hardware</a> and <a href=https://aicurious.io/posts/adas-jetson-nano-software/>software</a> design. In this week, I write about two machine learning modules: <strong>Object Detection Module</strong> and <strong>Lane Detection Module</strong>. I will focus on three core deep neural networks: an object detection network based on CenterNet, a ResNet-18 based traffic sign classification network and a U-Net based lane line segmentation network. I also introduce some experimental results in training and optimizing these networks.</p>
+<h2 id=i-object-detection-module>I. Object Detection Module</h2>
+<p>Based on hardware constraints described in <a href=https://aicurious.io/posts/adas-jetson-nano-intro-and-hardware/>the first post of this series</a>, in this section, I will introduce one of the key modules in machine learning block - Object Detection Module. This module is responsible for detect front obstacle objects such as other vehicles or pedestrians, and traffic signs. These results can be used for forward collision warning and over-speed warning. To provide these functions, the module contains two main components: a CenterNet based object detection neural network and a ResNet-18 based traffic sign classification network.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=object-detection-module.png alt="Object detection module design">
+</p>
+<p style=text-align:center><b>Object detection module design</b></p></p>
+<h3 id=1-centernet-based-object-detection-network>1. CenterNet-based Object detection network</h3>
+<p>Traffic object detection is a key deep neural network which contributes in forward collision warning and overspeed warning functions in my system.</p>
+<h4 id=background>Background</h4>
+<p>Recently, a trend in object detection improvement is to treat object detection as key point estimation problem. <a href=https://arxiv.org/abs/1904.07850>CenterNet Objects as Points</a> introduced in 2019 uses keypoint estimation to find object center points and regresses to all other object properties, such as size, 3D location, orientation, and even pose. The simplicity of this method allows CenterNet to run at a very high speed and outperform a range of state-of-the-art algorithms. In this object detection module, I choose CenterNet as the main object detection network because its simplicity and efficiency make it suitable for embedded hardware. I trained CenterNet using Berkeley DeepDrive (BDD) dataset with 10 classes: <code>person</code>, <code>rider</code>, <code>car</code>, <code>bus</code>, <code>truck</code>, <code>bike</code>, <code>motor</code>, <code>traffic light</code>, <code>traffic sign</code> and <code>train</code>. I have a blog post about CenterNet <a href=https://aicurious.io/posts/2020-04-23-tim-hieu-ve-centernet/>here</a> (It's only available in Vietnamese).</p>
+<h4 id=backbones>Backbones</h4>
+<p>In this project, I use <a href=https://arxiv.org/abs/1801.04381>MobileNetV2</a> and <a href=https://arxiv.org/abs/1512.03385>ResNet-18</a> as the backbone of CenterNet.</p>
+<p>Nowadays, state-of-the-art CNN architectures go deeper and deeper. While AlexNet had solely 5 convolutional layers, the VGG network and GoogleNet had 19 and 22 layers respectively. However, increasing network depth does not work by merely stacking layers along. Deep networks are hard to train because of the vanishing gradient problem - as the gradient is back-propagated to earlier layers, repeated multiplication may make the gradient become very small. As a result, once the network goes deeper, its performance gets saturated or begins to degrade quickly. The core idea of ResNet solution is introducing an “identity shortcut connection” that skips one or more layers. Following is the image of how to construct an “identity shortcut connection”. Instead of learning a direct mapping of $x \rightarrow y$ with a function $H(x)$, let us define the residual function using $F(x) = H(x) - x$, which can be reframed into $H(x) = F(x) + x$, where $F(x)$ and $x$ represents the stacked non-linear layers and the identity function respectively. The author’s hypothesis is that it is easy to optimize the residual mapping function $F(x)$ than to optimize the original, unreferenced mapping $H(x)$. By this way, they can construct networks with much more layers. ResNet-18 is a lightweight 18-layer network with residual blocks.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=residual-block.png alt="Residual Block - Image from ResNet paper">
+</p>
+<p style=text-align:center><b>Residual Block - Image from ResNet paper</b></p></p>
+<p><em><strong>MobileNetV2</strong></em> is a lightweight architecture targeting in mobile and embedded devices. This network also uses residual architecture like ResNet. Moreover, depth-wise separable convolution is used which dramatically reduce the complexity cost and model size of the network.</p>
+<h4 id=dataset>Dataset</h4>
+<p><a href=https://bdd-data.berkeley.edu/>BDD100K</a> is used as the main dataset for object detection. In the original download website, authors divided their dataset into three subsets: training, validation, and test, which I will call original training set, original validation set, and original test set, respectively. I could not download the original test set because it was not available during my project schedule, so I only use original training and original validation sets of this dataset.
+BDD100K original validation set is setup up as test set in my experiments. Besides, I randomly split original training set into training set and validation set with ratio 85:15 for my experiments. Below is the distribution of the datasets used in this project.</p>
+<p><strong>Table: Object detection test set: 10000 images (~12.5% number of images in the whole dataset)</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Class</strong></th>
+<th><strong>person</strong></th>
+<th><strong>rider</strong></th>
+<th><strong>car</strong></th>
+<th><strong>bus</strong></th>
+<th><strong>truck</strong></th>
+<th><strong>bike</strong></th>
+<th><strong>motor</strong></th>
+<th><strong>traffic light</strong></th>
+<th><strong>traffic sign</strong></th>
+<th><strong>train</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Number of images</strong></td>
+<td>13262</td>
+<td>649</td>
+<td>102506</td>
+<td>1597</td>
+<td>4245</td>
+<td>1007</td>
+<td>452</td>
+<td>26885</td>
+<td>34908</td>
+<td>15</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Table: Object detection training set: 59383 images (~74% number of images in the whole dataset)</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Class</strong></th>
+<th><strong>person</strong></th>
+<th><strong>rider</strong></th>
+<th><strong>car</strong></th>
+<th><strong>bus</strong></th>
+<th><strong>truck</strong></th>
+<th><strong>bike</strong></th>
+<th><strong>motor</strong></th>
+<th><strong>traffic light</strong></th>
+<th><strong>traffic sign</strong></th>
+<th><strong>train</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Number of images</strong></td>
+<td>77637</td>
+<td>3853</td>
+<td>605279</td>
+<td>9950</td>
+<td>25493</td>
+<td>6157</td>
+<td>2576</td>
+<td>157491</td>
+<td>203297</td>
+<td>119</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Table: Object detection validation set: 10480 images (~13.5% number of images in the whole dataset)</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>Class</strong></th>
+<th><strong>person</strong></th>
+<th><strong>rider</strong></th>
+<th><strong>car</strong></th>
+<th><strong>bus</strong></th>
+<th><strong>truck</strong></th>
+<th><strong>bike</strong></th>
+<th><strong>motor</strong></th>
+<th><strong>traffic light</strong></th>
+<th><strong>traffic sign</strong></th>
+<th><strong>train</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Number of images</strong></td>
+<td>13712</td>
+<td>664</td>
+<td>107932</td>
+<td>1722</td>
+<td>25493</td>
+<td>1053</td>
+<td>426</td>
+<td>28626</td>
+<td>36389</td>
+<td>17</td>
+</tr>
+</tbody>
+</table>
+<p>All datasets are converted into <a href=http://cocodataset.org/>COCO</a>-like object detection format.</p>
+<h4 id=experiments>Experiments</h4>
+<p>ResNet-18 and MobileNetV2 are two lightweight backbones which are used in my experiments. For training, I use the source code from CenterNet’s authors with some modifications:</p>
+<ul>
+<li>ResNet-18 backbone was implemented in the original source code from CenterNet’s authors. This source code was written with PyTorch framework. I trained this network with three image sizes 224x224, 384x384, 512x512 and batch size 32. Learning rate is set to $10^{-4}$, reduced to $10^{-5}$ on epoch 90, $10^{-6}$ on epoch 120. These setups were trained in 140 epochs.</li>
+<li>Besides ResNet-18, MobileNetV2 backbone was added into the original source code. I trained this network with three image sizes 224x224, 384x384, 512x512 and batch size 32. Learning rate is set to $5x10^{-4}$, reduced to $5x10^{-5}$ on epoch 35. These setups were trained in 70 epochs.</li>
+</ul>
+<p><strong>Result</strong></p>
+<p>The mean average precision and the inference speed of trained models are described in below table (system configuration: Intel Core i5 8400 and NVIDIA RTX 2070). As shown in the table, the inference time of CenterNet – MobileNet V2 models are lower than CenterNet – ResNet-18 models. However, these models are also less accurate than CenterNet – ResNet-18 models.</p>
+<p><strong>Table: Mean average accuracy and inference time of CenterNet models. mAP: mean average precision, IoU: intersection over union.</strong></p>
+<p><p style=text-align:center>
+<img loading=lazy src=test-centernet.png alt>
+</p>
+<p style=text-align:center><b></b></p></p>
+<h4 id=model-optimization-for-embedded-hardware>Model optimization for embedded hardware</h4>
+<p><p style=text-align:center>
+<img loading=lazy src=centernet-optimize.png alt="PyTorch to TensorRT engine conversion">
+</p>
+<p style=text-align:center><b>PyTorch to TensorRT engine conversion</b></p></p>
+<p>After training CenterNet using PyTorch framework, we obtain model files in PyTorch model format (.pth). In order to optimize inference speed on NVIDIA Jetson Nano, we need to convert these models to TensorRT engine file. The conversion is done via an intermediate format called ONNX (<a href=https://onnx.ai/>Open Neural Network Exchange</a>). PyTorch model is converted to ONNX format first using PyTorch ONNX module (step 1). After that, we convert ONNX model to TensorRT engine for each inference platform (step 2). Because the conversion from ONNX to TensorRT engine takes a long time, in my implementation, I serialize TensorRT engine to hard disk after converting and load it every time the program starts. In this step, we have to notice that TensorRT engine is built differently on different computer hardware. Therefore, we need to rebuild the engine if we need to inference on other hardware configuration.</p>
+<p>After the engine conversion, I test the result on the test set. The accuracy and inference time of the models are described in following table. The inference time of CenterNet – MobileNet V2 models are lower than CenterNet – ResNet-18 models. However, these models are also less accurate than CenterNet – ResNet-18 models. The accuracy difference between the original models and the converted models is negligible. The difference in accuracy between float 16 and float 32 precision is also small (mAP columns). However, the efficiency of the conversion process can be clearly seen (comparing the inference time of models for the original PyTorch framework and the converted models).</p>
+<p><strong>Table: Accuracy and inference time comparison after TensorRT engine conversion – Object detection model. The evaluation is done on the test set</strong></p>
+<p><p style=text-align:center>
+<img loading=lazy src=centernet-optimize-result.png alt>
+</p>
+<p style=text-align:center><b></b></p></p>
+<p>Based on the evaluation result, we can see that CenterNet with two lightweight backbones ResNet-18 and MobileNetV2 can achieve an acceptable accuracy and relatively high inference speed. The speed of these networks can be pushed further by running in float 16 precision without a noticeable reduction in accuracy. ResNet-18 backbone can be optimized better than MobileNetV2 in term of speed, which can be recognized by a larger reduction in inference time after converting. As CenterNet model with ResNet-18 backbone and input image size 384x384 provides the best balance between speed and accuracy on Jetson Nano, it is chosen as the main architecture for this project.</p>
+<h3 id=2-traffic-sign-classification-network>2. Traffic sign classification network</h3>
+<p>Due to the limitation of BDD dataset - It's only contains 1 class for traffic signs (without specifying the sign type), I had to train another neural network to recognize sign types. Because of the high speed and accuracy, ResNet-18 was also chosen for this task. I trained the model using Tensorflow and Keras frameworks. However, to optimize the speed, I also convert final model to TensorRT format.</p>
+<h4 id=dataset-1>Dataset</h4>
+<p>In this project, I only design the system to classify maximum speed signs, and I treat each speed level as a separate object class. In order to collect enough data for training, I use 2 datasets: <a href=https://www.mapillary.com/dataset/trafficsign>Mapillary Traffic Sign Dataset (MTSD)</a> and <a href="http://benchmark.ini.rub.de/?section=gtsrb&subsection=news">German Traffic Sign Recognition (GRSRB)</a> dataset. As MTSD is a traffic sign detection dataset, I use sign bounding boxes to crop them for classification task. After cropping, I merge 2 datasets and have 18,581 images of maximum speed limit traffic signs divided into 13 classes, and 879 end of speed limit signs (treating all end of speed limit signs as only 1 class). Besides, I use 20,000 crop images from other traffic signs and objects for “unknown” class. In total, there are 15 classes in this dataset: maximum speed signs (5km/h, 10km/h, 20km/h, 30km/h, 40km/h, 50km/h, 60km/h, 70km/h, 80km/h, 90km/h, 100km/h, 110km/h, 120km/h), end of speed limit (EOSL) and other sign (OTHER). After that, this dataset is divided into 3 subsets: training set (80%), validation set (10%) and test set (10%). The distribution is randomly for each traffic sign class. The final result is described in following tables.</p>
+<p><strong>Table: Number of images for each traffic sign class in training set. SL_X: maximum speed limit X km/h. EOSL: End of speed limit. OTHER: other objects – unknown class</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>SL5</strong></th>
+<th><strong>SL10</strong></th>
+<th><strong>SL20</strong></th>
+<th><strong>SL30</strong></th>
+<th><strong>SL40</strong></th>
+<th><strong>SL50</strong></th>
+<th><strong>SL60</strong></th>
+<th><strong>SL70</strong></th>
+<th><strong>SL80</strong></th>
+<th><strong>SL90</strong></th>
+<th><strong>SL100</strong></th>
+<th><strong>SL110</strong></th>
+<th><strong>SL120</strong></th>
+<th><strong>EOSL</strong></th>
+<th><strong>OTHER</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192</td>
+<td>377</td>
+<td>632</td>
+<td>2312</td>
+<td>1328</td>
+<td>2164</td>
+<td>1677</td>
+<td>1677</td>
+<td>1662</td>
+<td>517</td>
+<td>1105</td>
+<td>251</td>
+<td>989</td>
+<td>700</td>
+<td>16000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Table: Number of images for each traffic sign class in validation set. SL_X: maximum speed limit X km/h. EOSL: End of speed limit. OTHER: other objects – unknown class</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>SL5</strong></th>
+<th><strong>SL10</strong></th>
+<th><strong>SL20</strong></th>
+<th><strong>SL30</strong></th>
+<th><strong>SL40</strong></th>
+<th><strong>SL50</strong></th>
+<th><strong>SL60</strong></th>
+<th><strong>SL70</strong></th>
+<th><strong>SL80</strong></th>
+<th><strong>SL90</strong></th>
+<th><strong>SL100</strong></th>
+<th><strong>SL110</strong></th>
+<th><strong>SL120</strong></th>
+<th><strong>EOSL</strong></th>
+<th><strong>OTHER</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>23</td>
+<td>46</td>
+<td>79</td>
+<td>288</td>
+<td>166</td>
+<td>270</td>
+<td>209</td>
+<td>209</td>
+<td>207</td>
+<td>64</td>
+<td>138</td>
+<td>31</td>
+<td>123</td>
+<td>87</td>
+<td>2000</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Table: Number of images for each traffic sign class in test set. SL_X: maximum speed limit X km/h. EOSL: End of speed limit. OTHER: other objects – unknown class</strong></p>
+<table>
+<thead>
+<tr>
+<th><strong>SL5</strong></th>
+<th><strong>SL10</strong></th>
+<th><strong>SL20</strong></th>
+<th><strong>SL30</strong></th>
+<th><strong>SL40</strong></th>
+<th><strong>SL50</strong></th>
+<th><strong>SL60</strong></th>
+<th><strong>SL70</strong></th>
+<th><strong>SL80</strong></th>
+<th><strong>SL90</strong></th>
+<th><strong>SL100</strong></th>
+<th><strong>SL110</strong></th>
+<th><strong>SL120</strong></th>
+<th><strong>EOSL</strong></th>
+<th><strong>OTHER</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>23</td>
+<td>46</td>
+<td>79</td>
+<td>288</td>
+<td>166</td>
+<td>270</td>
+<td>209</td>
+<td>209</td>
+<td>207</td>
+<td>64</td>
+<td>138</td>
+<td>31</td>
+<td>123</td>
+<td>87</td>
+<td>2000</td>
+</tr>
+</tbody>
+</table>
+<h4 id=experiments-1>Experiments</h4>
+<p>I trained traffic sign classification network with image size 64x64, Adam optimizer with learning rate 0.0001, batch size 32, loss function categorical cross entropy. In order to deal with class imbalance problem, I set loss weight for class OTHER to <strong>0.001</strong> and for other classes to <strong>1.0</strong>. This setup was trained in 45 epochs and I consider the lowest validation loss model at epoch 39 as the best model. My best model achieves micro <strong>F1 = 0.984</strong> on the test set.</p>
+<h4 id=model-optimization-for-embedded-hardware-1>Model optimization for embedded hardware</h4>
+<p>The optimization from trained Keras model to TensorRT engine goes through 3 steps: freeze model from Keras model format to Tensorflow frozen graph, convert from frozen model to <a href=https://docs.nvidia.com/deeplearning/tensorrt/api/python_api/uff/uff.html>UFF (Universal Framework Format)</a> and finally to TensorRT engine. UFF is recommended by NVIDIA as an immediate model format to convert deep learning models for TensorRT framework. The conversion is demonstrated in following figure.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=resnet18-optimize.png alt="Traffic sign detection model to TensorRT engine conversion">
+</p>
+<p style=text-align:center><b>Traffic sign detection model to TensorRT engine conversion</b></p></p>
+<p>After testing TensorRT models, float 32 and float 16 precision model achieves F1 metric equal to <strong>0.9843</strong> and <strong>0.9840</strong> respectively on the test set. There is a small difference between these models and original Keras model (<strong>F1 = 0.9843</strong>). The speed is also improved in comparison with the original Keras model. The detail results are described in following table.</p>
+<p><strong>Table: Accuracy and inference time comparison after TensorRT engine conversion – Traffic sign classification model. The evaluation was done on the test set</strong></p>
+<p><p style=text-align:center>
+<img loading=lazy src=resnet18-test.png alt>
+</p>
+<p style=text-align:center><b></b></p></p>
+<p><strong>Discussion</strong></p>
+<p>The final traffic sign classification model has a high accuracy <strong>(mAP ~0.98)</strong>, which is enough for production. This network is also fast: it can run at <strong>1.9 ms</strong> per frame NVIDIA RTX 2070 and <strong>6.6 ms</strong> per frame on Jetson Nano. TensorRT float 16 model was integrated in our system.</p>
+<h2 id=ii-lane-detection-module>II. Lane Detection Module</h2>
+<p>Lane line detection module takes responsibility to detect lane lines and lane departure situation. This result is then used for lane departure warning. In this section, I describe the solution for lane line detection using deep neural network and Hough transform line detector.</p>
+<p>Traditional lane detection algorithms rely on highly specialized, handcrafted features to segment lane lines and fit lines using Hough transform or B-Snake-based algorithm. Popular representatives of this algorithm type use color-based features in combination with Hough transform, Canny edge detection algorithm in combination with Hough transform, ridgeness feature and RANSAC algorithm. In general, these traditional approaches are prone to robustness issues due to road scene variations (time of the day, weather condition, faded lane lines), and only performs well in some specific situations. Currently, the evolution of deep learning algorithms provides us better tools to build robust lane detection algorithms. U-Net is a fully convolutional network that works well in biomedical image segmentation, it can demonstrate high-precision segmentation results with less training image data. I applied U-Net to lane line segmentation problem and combined with Hough transform to find lane lines in form of line equations.</p>
+<p>The main principle of this module can be described in following figure. From RGB image captured using car dash cam, the system uses a U-Net based lane line segmentation neural network to output a binary image, in which, pixels corresponding to lane lines is in white. From this binary image, the system uses Hough line transform to detect lines in the image and group them into lane lines using spatial information. After that, we can find left and right lane lines in the third step and determine lane departure situation.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=lane-line-detection-flow.png alt="Lane detection flow">
+</p>
+<p style=text-align:center><b>Lane detection flow</b></p></p>
+<h3 id=1-lane-line-segmentation-network>1. Lane line segmentation network</h3>
+<p>In order to have a light-weight segmentation model to run on embedded hardware, I had two modifications with the original U-Net model: (I) adjust number of decoder filters to 128, 64, 32, 16, 8 filters from the top of decoder to the output of the network; (ii) replace the original backbone with ResNet-18 backbone. These modifications reduce the number of parameters in U-Net and give us a light-weight model which can run at over 200 frame per seconds (FPS) (model U-Net ResNet-18 input size 384x382, TensorRT float 16 on RTX 2070 GPU).</p>
+<h4 id=dataset-2>Dataset</h4>
+<p>Dataset is prepared from <a href="https://www.mapillary.com/dataset/vistas?pKey=kBLk1dWR1ZuFPspBE9fN_w">Mapillary Vista dataset</a> with some modifications. The original dataset contains about 18000 images in training set and about 2000 images in validation set. I merge these sets, remove a number of images which do not contain lane line or have too much noise. The final dataset has 15303 images. I split this set randomly into three subsets: 10712 images for training (~70%), 2296 images for validation (~15%) and 2295 images for test (~15%). Because the label of Mapillary Vista contains many object classes, I keep only lane line class to generate binary segmentation masks as the new label.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=mapillary-vista-preprocessing.png alt="Mapillary Vistas dataset preprocessing – Images A, B are from Mapillary Vitas">
+</p>
+<p style=text-align:center><b>Mapillary Vistas dataset preprocessing – Images A, B are from Mapillary Vitas</b></p></p>
+<h4 id=experiments-2>Experiments</h4>
+<p>I did some experiments on prepared dataset with different training configurations. I depend on mean IoU (intersect over union) as the metric to optimize this network. All models were trained with stochastic gradient descent (SGD) optimizer with learning rate 0.001, momentum 0.9.</p>
+<p><strong>Table: Mean IoU with different image sizes and loss functions. The evaluation is done on the validation set.</strong></p>
+<p><p style=text-align:center>
+<img loading=lazy src=lane-line-seg-experiments.png alt>
+</p>
+<p style=text-align:center><b></b></p></p>
+<p>Above table describes the result. Because lane line segmentation suffers from data imbalance (the number of pixels belonging to lane lines is relatively small than the number of other pixels), the combination of Focal loss and Dice loss or the combination of Focal loss and Tversky loss produce better results than traditional binary cross entropy loss. This network can run at 11-13 ms per frame on the experimental system with Intel core i5 and NVIDIA RTX 2070 GPU.</p>
+<p>Finally, we tested the trained models on the test set. The best models we obtained were trained with the combination of Focal loss and Dice loss. These models can achieve <strong>mean IoU 0.736</strong> with input image size 384x384 and <strong>mean IoU 0.744</strong> with input image size 448x448.</p>
+<h4 id=model-optimization-for-embedded-hardware-2>Model optimization for embedded hardware</h4>
+<p>We convert lane line segmentation model in the same way as traffic sign classification model. After the conversion, following table shows the results of different configurations. I ran the experiments with 2 image size – 384x384 and 448x448. There is only a little difference in mean IoU metric between the models before and after conversion.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=lane-line-seg-optimize-test.png alt="Mean IoU and inference time comparison after TensorRT engine conversion – Lane line segmentation model. Evaluation was done on the test set.">
+</p>
+<p style=text-align:center><b>Mean IoU and inference time comparison after TensorRT engine conversion – Lane line segmentation model. Evaluation was done on the test set.</b></p></p>
+<h4 id=discussion>Discussion</h4>
+<p>The trained models can achieve an acceptable mean IoU on the test set (<strong>0.736-0.745</strong>), which are suitable for production usage. We also have a high frame rate (384x384 – TensorRT float 16 model can run at over 200 FPS on RTX 2070 and 14 FPS on Jetson Nano). Finally, I integrated 384x384 – TensorRT float 16 model in the final system.</p>
+<h3 id=2-lane-line-detection-with-hough-transform>2. Lane line detection with Hough transform</h3>
+<p>Hough Transform is a line detection algorithm that is quite effective in image processing. The general idea of this algorithm is to create mapping from image space (A) to a new space (B) that each line in space (A) corresponds to a point in space (B), each point in space (A) corresponds to a sinusoid in space (B). After projecting all points in (A) into sinusoids in space (B), we find the places with the highest intersection point density. These places then are projected to (A) into lines. By this way, Hough line transform algorithm can find lines in image space (A).</p>
+<p>The progress to find lane line candidates is shown in following figure. From segmentation mask produced by line segmentation network, lane line detection module uses probabilistic <a href=https://aicurious.io/posts/2019-10-24-hough-transform-phat-hien-duong-thang/>Hough transform</a> to detect raw line segments (1). After that, these lines are partitioned into groups using disjoint-set/union-find forest algorithm inverted by Bernard A. Galler and Michael J. Fischer in 1964. We use spatial distance and angle difference between lines to group line segments which belong to a same line. After step (2), we can see that different line groups are drawn in different colors. Step (3) receives these line groups as the input and fit a line through each group using maximum-likelihood estimation with L2 distance.</p>
+<p><p style=text-align:center>
+<img loading=lazy src=lane-line-detect-hough.png alt="Line candidate detection">
+</p>
+<p style=text-align:center><b>Line candidate detection</b></p></p>
+<p>Combining lane segmentation model with above lane detection algorithms, this system can detect lane lines in different environments and determine lane departure situation. It creates a reliable input for lane departure warning module.</p>
+<h2 id=system-testing-and-conclusion>System testing and Conclusion</h2>
+<p>In this project, I implemented and tested the system in different situations with a simulation. All testing cases were made with videos from Berkeley DeepDrive dataset, CARLA simulator and self-recorded videos.</p>
+<p>Finally, this post summaried my results in machine learning module of my advanced driver-assistance system. <del>Currently, only the inference source code for Jetson Nano was made public. In the future, I will make public other repositories for training and optimizing neural networks.</del> Stay tuned! All comments are welcome. Thank you!</p>
+<p><strong>Update 15/11/2020:</strong> I added some links to the source code of this project in <a href=https://aicurious.io/posts/adas-jetson-nano-intro-and-hardware/>the first post</a>.</p>
+</div>
+<div style="border:2px solid #efefef;padding:2rem;margin-top:2rem">
+<div id=mc_embed_signup>
+<form action="https://vietanhdev.us13.list-manage.com/subscribe/post?u=c5f9d88238b4c0ec0106fe459&amp;amp;id=e74e121dc8" method=post id=mc-embedded-subscribe-form name=mc-embedded-subscribe-form class=validate target=_blank novalidate>
+<div id=mc_embed_signup_scroll>
+<h2 class="widget-title mt-4">Subscribe for Updates</h2>
+<div class=indicates-required><span class=asterisk>*</span> indicates required</div>
+<div class=mc-field-group>
+<label for=mce-EMAIL>Your email<span style=color:red;display:inline>*</span></label>
+<input type=email name=EMAIL class="required email" id=mce-EMAIL>
+</div>
+<div class=mc-field-group>
+<label for=mce-FNAME>Your name </label>
+<input type=text name=FNAME id=mce-FNAME>
+</div>
+<div id=mce-responses class=clear>
+<div class=response id=mce-error-response style=display:none></div>
+<div class=response id=mce-success-response style=display:none></div>
+</div>
+<div style=position:absolute;left:-5000px aria-hidden=true><input type=text name=b_c5f9d88238b4c0ec0106fe459_e74e121dc8 tabindex=-1></div>
+<div class=clear><button type=submit name=subscribe id=mc-embedded-subscribe class=button>Subscribe</div>
+</div>
+</form>
+</div>
+<script defer type=text/javascript src=//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js></script>
+</div>
+<script>talkyardServerUrl='https://comments-for-aicurious-io.talkyard.net'</script>
+<script async defer src=https://c1.ty-cdn.net/-/talkyard-comments.min.js></script>
+<div class=talkyard-comments data-discussion-id=/posts/adas-jetson-nano-deep-neural-networks/ style=margin-top:45px>
+<noscript>Please enable Javascript to view comments.</noscript>
+</div>
+<h2>Related Posts</h3>
+<ul>
+<li><a href=https://aicurious.io/posts/adas-jetson-nano-software/>Advanced driver-assistance system on Jetson Nano Part 2 - Software design</a></li>
+<li><a href=https://aicurious.io/posts/adas-jetson-nano-intro-and-hardware/>Advanced driver-assistance system on Jetson Nano Part 1 - Intro & Hardware design</a></li>
+</ul>
+</article>
+<aside class=sidebar>
+<section class=sidebar_inner>
+<div class=sticky-toc>
+<div class=js-toc></div>
+</div>
+</section>
+</aside>
+</div>
+</main><svg width="0" height="0" class="hidden"><symbol viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" id="facebook"><path d="M437 0H75C33.648.0.0 33.648.0 75v362c0 41.352 33.648 75 75 75h151V331h-60v-90h60v-61c0-49.629 40.371-90 90-90h91v90h-91v61h91l-15 90h-76v181h121c41.352.0 75-33.648 75-75V75c0-41.352-33.648-75-75-75zm0 0"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18.001 18.001" id="twitter"><path d="M15.891 4.013c.808-.496 1.343-1.173 1.605-2.034a8.68 8.68.0 01-2.351.861c-.703-.756-1.593-1.14-2.66-1.14-1.043.0-1.924.366-2.643 1.078A3.56 3.56.0 008.766 5.383c0 .309.039.585.117.819-3.076-.105-5.622-1.381-7.628-3.837-.34.601-.51 1.213-.51 1.846.0 1.301.549 2.332 1.645 3.089-.625-.053-1.176-.211-1.645-.47.0.929.273 1.705.82 2.388a3.623 3.623.0 002.115 1.291c-.312.08-.641.118-.979.118-.312.0-.533-.026-.664-.083.23.757.664 1.371 1.291 1.841a3.652 3.652.0 002.152.743C4.148 14.173 2.625 14.69.902 14.69c-.422.0-.721-.006-.902-.038 1.697 1.102 3.586 1.649 5.676 1.649 2.139.0 4.029-.542 5.674-1.626 1.645-1.078 2.859-2.408 3.639-3.974a10.77 10.77.0 001.172-4.892v-.468a7.788 7.788.0 001.84-1.921 8.142 8.142.0 01-2.11.593z"/></symbol><symbol aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" id="mail"><path d="M502.3 190.8c3.9-3.1 9.7-.2 9.7 4.7V4e2c0 26.5-21.5 48-48 48H48c-26.5.0-48-21.5-48-48V195.6c0-5 5.7-7.8 9.7-4.7 22.4 17.4 52.1 39.5 154.1 113.6 21.1 15.4 56.7 47.8 92.2 47.6 35.7.3 72-32.8 92.3-47.6 102-74.1 131.6-96.3 154-113.7zM256 320c23.2.4 56.6-29.2 73.4-41.4 132.7-96.3 142.8-104.7 173.4-128.7 5.8-4.5 9.2-11.5 9.2-18.9v-19c0-26.5-21.5-48-48-48H48C21.5 64 0 85.5.0 112v19c0 7.4 3.4 14.3 9.2 18.9 30.6 23.9 40.7 32.4 173.4 128.7 16.8 12.2 50.2 41.8 73.4 41.4z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" id="calendar"><path d="M452 40h-24V0h-40v40H124V0H84v40H60C26.916 40 0 66.916.0 1e2v352c0 33.084 26.916 60 60 60h392c33.084.0 60-26.916 60-60V1e2c0-33.084-26.916-60-60-60zm20 412c0 11.028-8.972 20-20 20H60c-11.028.0-20-8.972-20-20V188h432v264zm0-304H40v-48c0-11.028 8.972-20 20-20h24v40h40V80h264v40h40V80h24c11.028.0 20 8.972 20 20v48z"/><path d="M76 230h40v40H76zm80 0h40v40h-40zm80 0h40v40h-40zm80 0h40v40h-40zm80 0h40v40h-40zM76 310h40v40H76zm80 0h40v40h-40zm80 0h40v40h-40zm80 0h40v40h-40zM76 390h40v40H76zm80 0h40v40h-40zm80 0h40v40h-40zm80 0h40v40h-40zm80-80h40v40h-40z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" id="github"><path d="M255.968 5.329C114.624 5.329.0 120.401.0 262.353c0 113.536 73.344 209.856 175.104 243.872 12.8 2.368 17.472-5.568 17.472-12.384.0-6.112-.224-22.272-.352-43.712-71.2 15.52-86.24-34.464-86.24-34.464-11.616-29.696-28.416-37.6-28.416-37.6-23.264-15.936 1.728-15.616 1.728-15.616 25.696 1.824 39.2 26.496 39.2 26.496 22.848 39.264 59.936 27.936 74.528 21.344 2.304-16.608 8.928-27.936 16.256-34.368-56.832-6.496-116.608-28.544-116.608-127.008.0-28.064 9.984-51.008 26.368-68.992-2.656-6.496-11.424-32.64 2.496-68 0 0 21.504-6.912 70.4 26.336 20.416-5.696 42.304-8.544 64.096-8.64 21.728.128 43.648 2.944 64.096 8.672 48.864-33.248 70.336-26.336 70.336-26.336 13.952 35.392 5.184 61.504 2.56 68 16.416 17.984 26.304 40.928 26.304 68.992.0 98.72-59.84 120.448-116.864 126.816 9.184 7.936 17.376 23.616 17.376 47.584.0 34.368-.32 62.08-.32 70.496.0 6.88 4.608 14.88 17.6 12.352C438.72 472.145 512 375.857 512 262.353 512 120.401 397.376 5.329 255.968 5.329z"/></symbol><symbol viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="rss"><circle cx="3.429" cy="20.571" r="3.429"/><path d="M11.429 24h4.57C15.999 15.179 8.821 8.001.0 8v4.572c6.302.001 11.429 5.126 11.429 11.428z"/><path d="M24 24C24 10.766 13.234.0.0.0v4.571c10.714.0 19.43 8.714 19.43 19.429z"/></symbol><symbol viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" id="linkedin"><path d="M437 0H75C33.648.0.0 33.648.0 75v362c0 41.352 33.648 75 75 75h362c41.352.0 75-33.648 75-75V75c0-41.352-33.648-75-75-75zM181 406h-60V196h60zm0-240h-60v-60h60zm210 240h-60V286c0-16.54-13.46-30-30-30s-30 13.46-30 30v120h-60V196h60v11.309C286.719 202.422 296.93 196 316 196c40.691.043 75 36.547 75 79.688zm0 0"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612 612" id="arrow"><path d="M604.501 440.509 325.398 134.956c-5.331-5.357-12.423-7.627-19.386-7.27-6.989-.357-14.056 1.913-19.387 7.27L7.499 440.509c-9.999 10.024-9.999 26.298.0 36.323s26.223 10.024 36.222.0l262.293-287.164L568.28 476.832c9.999 10.024 26.222 10.024 36.221.0 9.999-10.023 9.999-26.298.0-36.323z"/></symbol><symbol viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" id="carly"><path d="M504.971 239.029 448 182.059V84c0-46.317-37.682-84-84-84h-44c-13.255.0-24 10.745-24 24s10.745 24 24 24h44c19.851.0 36 16.149 36 36v108c0 6.365 2.529 12.47 7.029 16.971L454.059 256l-47.029 47.029A24.002 24.002.0 004e2 320v108c0 19.851-16.149 36-36 36h-44c-13.255.0-24 10.745-24 24s10.745 24 24 24h44c46.318.0 84-37.683 84-84v-98.059l56.971-56.971c9.372-9.372 9.372-24.568.0-33.941zM112 192V84c0-19.851 16.149-36 36-36h44c13.255.0 24-10.745 24-24S205.255.0 192 0h-44c-46.318.0-84 37.683-84 84v98.059l-56.971 56.97c-9.373 9.373-9.373 24.568.0 33.941L64 329.941V428c0 46.317 37.682 84 84 84h44c13.255.0 24-10.745 24-24s-10.745-24-24-24h-44c-19.851.0-36-16.149-36-36V320c0-6.365-2.529-12.47-7.029-16.971L57.941 256l47.029-47.029A24.002 24.002.0 00112 192z"/></symbol><symbol viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" id="copy"><path d="M23 2.75A2.75 2.75.0 0020.25.0H8.75A2.75 2.75.0 006 2.75v13.5A2.75 2.75.0 008.75 19h11.5A2.75 2.75.0 0023 16.25zM18.25 14.5h-7.5a.75.75.0 010-1.5h7.5a.75.75.0 010 1.5zm0-3h-7.5a.75.75.0 010-1.5h7.5a.75.75.0 010 1.5zm0-3h-7.5a.75.75.0 010-1.5h7.5a.75.75.0 010 1.5z"/><path d="M8.75 20.5A4.255 4.255.0 014.5 16.25V2.75c0-.086.02-.166.025-.25H3.75A2.752 2.752.0 001 5.25v16A2.752 2.752.0 003.75 24h12a2.752 2.752.0 002.75-2.75v-.75z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001" id="closeme"><path d="M284.286 256.002 506.143 34.144c7.811-7.811 7.811-20.475.0-28.285-7.811-7.81-20.475-7.811-28.285.0L256 227.717 34.143 5.859c-7.811-7.811-20.475-7.811-28.285.0-7.81 7.811-7.811 20.475.0 28.285l221.857 221.857L5.858 477.859c-7.811 7.811-7.811 20.475.0 28.285a19.938 19.938.0 0014.143 5.857 19.94 19.94.0 0014.143-5.857L256 284.287l221.857 221.857c3.905 3.905 9.024 5.857 14.143 5.857s10.237-1.952 14.143-5.857c7.811-7.811 7.811-20.475.0-28.285L284.286 256.002z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" id="open-menu"><path d="M492 236H20c-11.046.0-20 8.954-20 20s8.954 20 20 20h472c11.046.0 20-8.954 20-20s-8.954-20-20-20zm0-160H20C8.954 76 0 84.954.0 96s8.954 20 20 20h472c11.046.0 20-8.954 20-20s-8.954-20-20-20zm0 320H20c-11.046.0-20 8.954-20 20s8.954 20 20 20h472c11.046.0 20-8.954 20-20s-8.954-20-20-20z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="instagram"><path d="M12 2.163c3.204.0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849.0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204.0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849.0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741.0 8.333.014 7.053.072c-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.668.072 4.948c.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403.0-6.162 2.759-6.162 6.162S8.597 18.163 12 18.163s6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zM12 16c-2.209.0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796.0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795.0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></symbol><symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" id="youtube"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23.0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23.0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 3.993L9 16z"/></symbol></svg>
+<footer class=footer>
+<div class="footer_inner wrap pale">
+<img alt="ANDRYLAT: DEV NOTES" src=https://aicurious.io/icons/apple-touch-icon.png class="icon icon_2 transparent">
+<p> &copy;&nbsp;<span class=year>2021</span>&nbsp;Andrylat: Dev notes. </p><a class=to_top href=#documentTop><svg class="icon"><use xlink:href="#arrow"/></svg>
+</a>
+</div>
+</footer>
+<script>window.MathJax={tex:{inlineMath:[['$','$']]},options:{enableMenu:!0}}</script>
+<script async src=https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js></script>
+<style>mjx-container.MathJax[display=inline]{font-size:150%!important}mjx-container.MathJax[display=true]{text-align:left!important}@media screen and (min-width:600px){mjx-container.MathJax[display=true]{padding-left:2rem}}</style>
+<script defer src=https://aicurious.io/tocbot/tocbot.min.js></script>
+<script>function docReady(a){document.readyState==="complete"||document.readyState==="interactive"?setTimeout(a,1):document.addEventListener("DOMContentLoaded",a)}docReady(function(){var b=document.getElementsByTagName("head")[0],c;function a(a){window.tocbot.init({tocSelector:'.js-toc',contentSelector:'.js-toc-content',headingSelector:'h1, h2, h3'})}a()})</script>
+<script type=text/javascript src=https://aicurious.io/js/bundle.min.5e4b2b0beb72634f7d429f971665e08330cb157ebab11f280b78f12d778628b51305d7109aa57feb78cd52af82128e77611bfbe196288a6ff5f146421613c8a5.js integrity="sha512-XksrC+tyY099Qp+XFmXggzDLFX66sR8oC3jxLXeGKLUTBdcQmqV/63jNUq+CEo53YRv74ZYoim/18UZCFhPIpQ==" crossorigin=anonymous></script>
+</body>
+</html>
